@@ -8,6 +8,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jooq.lambda.function.Function2;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -72,14 +73,129 @@ public class Main {
         System.out.println("Counted " + numCount + " 1,4,7,8");
     }
 
+    private int convertToNumber(String str) {
+        boolean[] indices = new boolean[7];
+        Arrays.fill(indices, false);
+        for (char c : str.toCharArray()) {
+            int idx = c - 'a';
+            indices[c - 'a'] = true;
+        }
+        int num = 0;
+        for (int idx = 6; idx >= 0; idx--) {
+            num = (num << 1) | (indices[idx] ? 0x1 : 0x0);
+        }
+        return num;
+    }
+
+    private String findStringOfLength(String[] arr, int len) {
+        for (String str : arr) {
+            if (str.length() == len) {
+                return str;
+            }
+        }
+        return null;
+    }
+
+    private int[] decodeInput(String input) {
+        String[] parts = StringUtils.split(input,' ');
+        int[] decoder = new int[10];
+        decoder[8] = 127;
+        decoder[1] = convertToNumber(findStringOfLength(parts, 2));
+        decoder[7] = convertToNumber(findStringOfLength(parts, 3));
+        decoder[4] = convertToNumber(findStringOfLength(parts, 4));
+        int lDiff = decoder[4] & ~decoder[1];
+        for (String part : parts) {
+            int len = part.length();
+            if (len == 2 || len == 3 || len == 4 || len == 7) { // 1 4 7 8
+                continue;
+            }
+            int n = convertToNumber(part);
+            if ((n & decoder[4]) == decoder[4]) { // 9
+                decoder[9] = n;
+            } else if ((n & decoder[1]) == decoder[1]) {
+                if (len == 6) {
+                    decoder[0] = n; // 0
+                } else {
+                    decoder[3] = n; // 3
+                }
+            } else if ((n & lDiff) == lDiff) {
+                if (len == 5) {
+                    decoder[5] = n; // 5
+                } else {
+                    decoder[6] = n; // 6
+                }
+            } else {
+                decoder[2] = n; // 2
+            }
+        }
+        return decoder;
+    }
+
+    private int getIndexOf(int[] arr, int num) {
+        for (int idx = 0; idx < arr.length; idx++) {
+            if (num == arr[idx]) {
+                return idx;
+            }
+        }
+        return -1;
+    }
+
+    private int[] decodeOutput(int[] decoder, String output) {
+        String parts[] = StringUtils.split(output, ' ');
+        int[] numbers = new int[4];
+        for (int idx = 0; idx < 4; idx++) {
+            int currNum = convertToNumber(parts[idx]);
+            numbers[idx] = getIndexOf(decoder, currNum);
+        }
+        return numbers;
+    }
+
+    private void dumpArray(String prefix, int[] arr) {
+        System.out.println(prefix + ": " + Arrays.stream(arr).mapToObj(Integer::toUnsignedString).collect(Collectors.joining(",")));
+    }
+
+    private int decodeLine(String line) {
+        System.out.println("Line: " + line);
+        String parts[] = StringUtils.splitByWholeSeparator(line, " | ");
+        int[] decoded = decodeInput(parts[0]);
+        dumpArray("decoded", decoded);
+        int[] numbers = decodeOutput(decoded, parts[1]);
+        dumpArray("numbers", numbers);
+        int num = 0;
+        for (int currDig : numbers) {
+            num = (num * 10) + currDig;
+        }
+        System.out.println("Number: " + num);
+        return num;
+    }
+
     void part2() throws IOException {
+        List<String> lines = getLines("be cfbegad cbdgef fgaecd cgeb fdcge agebfd fecdb fabcd edb | fdgacbe cefdb cefbgd gcbe\n" +
+                "  edbfga begcd cbg gc gcadebf fbgde acbgfd abcde gfcbed gfec | fcgedb cgb dgebacf gc\n" +
+                "  fgaebd cg bdaec gdafb agbcfd gdcbef bgcad gfac gcb cdgabef | cg cg fdcagb cbg\n" +
+                "  fbegcd cbd adcefb dageb afcb bc aefdc ecdab fgdeca fcdbega | efabcd cedba gadfec cb\n" +
+                "  aecbfdg fbg gf bafeg dbefa fcge gcbea fcaegb dgceab fcbdga | gecf egdcabf bgf bfgea\n" +
+                "  fgeab ca afcebg bdacfeg cfaedg gcfdb baec bfadeg bafgc acf | gebdcfa ecba ca fadegcb\n" +
+                "  dbcfg fgd bdegcaf fgec aegbdf ecdfab fbedc dacgb gdcebf gf | cefg dcbef fcge gbcadfe\n" +
+                "  bdfegc cbegaf gecbf dfcage bdacg ed bedf ced adcbefg gebcd | ed bcgafe cdgba cbgef\n" +
+                "  egadfb cdbfeg cegd fecab cgb gbdefca cg fgcdab egfdb bfceg | gbdfcae bgc cg cgb\n" +
+                "  gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce");
+        long total = lines.stream()
+                .mapToInt(this::decodeLine)
+                .sum();
+        System.out.println("Total: " + total);
     }
 
     public static void main(String[] args) {
         boolean useSource = args.length > 0 && StringUtils.equalsIgnoreCase(args[0], "-g");
+        boolean run2 = args.length > 1 && StringUtils.equalsIgnoreCase(args[1], "-2");
         var main = new Main(useSource);
         try {
-            main.part1();
+            if (run2) {
+                main.part2();
+            } else {
+                main.part1();
+            }
         } catch (IOException e) {
             System.err.println(e);
         }
