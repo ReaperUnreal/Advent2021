@@ -43,7 +43,7 @@ public class Main {
                 .collect(Collectors.toList());
     }
 
-    private List<String> getLines(String defaultInput) throws IOException {
+    public List<String> getLines(String defaultInput) throws IOException {
         if (useSource) {
             return readLines();
         } else {
@@ -51,17 +51,7 @@ public class Main {
         }
     }
 
-    void part1() throws IOException {
-        List<String> lines = getLines("be cfbegad cbdgef fgaecd cgeb fdcge agebfd fecdb fabcd edb | fdgacbe cefdb cefbgd gcbe\n" +
-                "  edbfga begcd cbg gc gcadebf fbgde acbgfd abcde gfcbed gfec | fcgedb cgb dgebacf gc\n" +
-                "  fgaebd cg bdaec gdafb agbcfd gdcbef bgcad gfac gcb cdgabef | cg cg fdcagb cbg\n" +
-                "  fbegcd cbd adcefb dageb afcb bc aefdc ecdab fgdeca fcdbega | efabcd cedba gadfec cb\n" +
-                "  aecbfdg fbg gf bafeg dbefa fcge gcbea fcaegb dgceab fcbdga | gecf egdcabf bgf bfgea\n" +
-                "  fgeab ca afcebg bdacfeg cfaedg gcfdb baec bfadeg bafgc acf | gebdcfa ecba ca fadegcb\n" +
-                "  dbcfg fgd bdegcaf fgec aegbdf ecdfab fbedc dacgb gdcebf gf | cefg dcbef fcge gbcadfe\n" +
-                "  bdfegc cbegaf gecbf dfcage bdacg ed bedf ced adcbefg gebcd | ed bcgafe cdgba cbgef\n" +
-                "  egadfb cdbfeg cegd fecab cgb gbdefca cg fgcdab egfdb bfceg | gbdfcae bgc cg cgb\n" +
-                "  gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce");
+    void part1(List<String> lines) {
         long numCount = lines.stream()
                 .map(line -> StringUtils.splitByWholeSeparator(line, " | "))
                 .map(parts -> parts[1])
@@ -77,7 +67,6 @@ public class Main {
         boolean[] indices = new boolean[7];
         Arrays.fill(indices, false);
         for (char c : str.toCharArray()) {
-            int idx = c - 'a';
             indices[c - 'a'] = true;
         }
         int num = 0;
@@ -150,36 +139,18 @@ public class Main {
         return numbers;
     }
 
-    private void dumpArray(String prefix, int[] arr) {
-        System.out.println(prefix + ": " + Arrays.stream(arr).mapToObj(Integer::toUnsignedString).collect(Collectors.joining(",")));
-    }
-
     private int decodeLine(String line) {
-        System.out.println("Line: " + line);
         String parts[] = StringUtils.splitByWholeSeparator(line, " | ");
         int[] decoded = decodeInput(parts[0]);
-        dumpArray("decoded", decoded);
         int[] numbers = decodeOutput(decoded, parts[1]);
-        dumpArray("numbers", numbers);
         int num = 0;
         for (int currDig : numbers) {
             num = (num * 10) + currDig;
         }
-        System.out.println("Number: " + num);
         return num;
     }
 
-    void part2() throws IOException {
-        List<String> lines = getLines("be cfbegad cbdgef fgaecd cgeb fdcge agebfd fecdb fabcd edb | fdgacbe cefdb cefbgd gcbe\n" +
-                "  edbfga begcd cbg gc gcadebf fbgde acbgfd abcde gfcbed gfec | fcgedb cgb dgebacf gc\n" +
-                "  fgaebd cg bdaec gdafb agbcfd gdcbef bgcad gfac gcb cdgabef | cg cg fdcagb cbg\n" +
-                "  fbegcd cbd adcefb dageb afcb bc aefdc ecdab fgdeca fcdbega | efabcd cedba gadfec cb\n" +
-                "  aecbfdg fbg gf bafeg dbefa fcge gcbea fcaegb dgceab fcbdga | gecf egdcabf bgf bfgea\n" +
-                "  fgeab ca afcebg bdacfeg cfaedg gcfdb baec bfadeg bafgc acf | gebdcfa ecba ca fadegcb\n" +
-                "  dbcfg fgd bdegcaf fgec aegbdf ecdfab fbedc dacgb gdcebf gf | cefg dcbef fcge gbcadfe\n" +
-                "  bdfegc cbegaf gecbf dfcage bdacg ed bedf ced adcbefg gebcd | ed bcgafe cdgba cbgef\n" +
-                "  egadfb cdbfeg cegd fecab cgb gbdefca cg fgcdab egfdb bfceg | gbdfcae bgc cg cgb\n" +
-                "  gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce");
+    void part2(List<String> lines) {
         long total = lines.stream()
                 .mapToInt(this::decodeLine)
                 .sum();
@@ -187,14 +158,31 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        boolean useSource = args.length > 0 && StringUtils.equalsIgnoreCase(args[0], "-g");
-        boolean run2 = args.length > 1 && StringUtils.equalsIgnoreCase(args[1], "-2");
+        boolean useSource = false;
+        boolean run2 = false;
+        for (String arg : args) {
+            if (StringUtils.equalsIgnoreCase(arg, "-g")) {
+                useSource = true;
+            } else if (StringUtils.equalsIgnoreCase(arg, "-2")) {
+                run2 = true;
+            }
+        }
         var main = new Main(useSource);
         try {
+            List<String> lines = main.getLines("be cfbegad cbdgef fgaecd cgeb fdcge agebfd fecdb fabcd edb | fdgacbe cefdb cefbgd gcbe\n" +
+                    "  edbfga begcd cbg gc gcadebf fbgde acbgfd abcde gfcbed gfec | fcgedb cgb dgebacf gc\n" +
+                    "  fgaebd cg bdaec gdafb agbcfd gdcbef bgcad gfac gcb cdgabef | cg cg fdcagb cbg\n" +
+                    "  fbegcd cbd adcefb dageb afcb bc aefdc ecdab fgdeca fcdbega | efabcd cedba gadfec cb\n" +
+                    "  aecbfdg fbg gf bafeg dbefa fcge gcbea fcaegb dgceab fcbdga | gecf egdcabf bgf bfgea\n" +
+                    "  fgeab ca afcebg bdacfeg cfaedg gcfdb baec bfadeg bafgc acf | gebdcfa ecba ca fadegcb\n" +
+                    "  dbcfg fgd bdegcaf fgec aegbdf ecdfab fbedc dacgb gdcebf gf | cefg dcbef fcge gbcadfe\n" +
+                    "  bdfegc cbegaf gecbf dfcage bdacg ed bedf ced adcbefg gebcd | ed bcgafe cdgba cbgef\n" +
+                    "  egadfb cdbfeg cegd fecab cgb gbdefca cg fgcdab egfdb bfceg | gbdfcae bgc cg cgb\n" +
+                    "  gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce");
             if (run2) {
-                main.part2();
+                main.part2(lines);
             } else {
-                main.part1();
+                main.part1(lines);
             }
         } catch (IOException e) {
             System.err.println(e);
